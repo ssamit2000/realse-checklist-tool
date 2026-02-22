@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+
+# Release Checklist Tool
+
+A modern web application designed to help developers manage release steps efficiently.  
+With this tool, you can create releases, track step completion, update additional info, and see release statuses automatically.
+
+---
+
+## Features
+
+- View a list of all releases
+- Create a new release (name, due date, optional additional info)
+- Check/uncheck steps for a release
+- Update additional information for a release
+- Delete a release
+- Automatic status computation based on steps:
+  - `planned` → no steps completed
+  - `ongoing` → some steps completed
+  - `done` → all steps completed
+- Simple and user-friendly interface
+- Full frontend and backend in a single repository
+
+---
+
+## Tech Stack
+
+- **Frontend:** Next.js 16 (App Router), React 18
+- **Backend:** Next.js API Routes
+- **Database:** PostgreSQL with Prisma ORM
+- **Hosting:** Vercel (frontend + backend)
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL database (local or hosted)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/ssamit2000/realse-checklist-tool.git
+cd realse-checklist-tool
+````
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up environment variables:
+
+Create a `.env` file in the root:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE_NAME"
+```
+
+4. Apply Prisma migrations:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+5. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database Schema
 
-## Learn More
+```prisma
+model Release {
+  id             String   @id @default(cuid())
+  name           String
+  date           DateTime
+  additionalInfo String?
+  completedSteps String[] @default([])
+  steps          Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Endpoint             | Description                               |
+| ------ | -------------------- | ----------------------------------------- |
+| GET    | `/api/releases`      | Get all releases                          |
+| GET    | `/api/releases/[id]` | Get a single release by ID                |
+| POST   | `/api/releases`      | Create a new release                      |
+| PATCH  | `/api/releases/[id]` | Update completed steps or additional info |
+| DELETE | `/api/releases/[id]` | Delete a release                          |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Running Tests
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run test
+```
+
+> ⚠️ Note: Tests require the local server and a running database. Ensure `DATABASE_URL` is set correctly.
+
+---
+
+## Deployment
+
+* The app can be deployed on Vercel (or similar hosting)
+* Make sure to set the `DATABASE_URL` environment variable in your deployment settings
+
+```
+
+---
+
+If you want, I can also **write a very short “Quick Deploy to Vercel” section** for this README, so someone can deploy it in 5 minutes without extra instructions.  
+
+Do you want me to do that?
+```
