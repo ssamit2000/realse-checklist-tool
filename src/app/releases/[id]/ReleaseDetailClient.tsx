@@ -14,6 +14,7 @@ type Release = {
 
 type Props = {
   release: Release;
+  status: string; // ✅ add this line
 };
 
 export default function ReleaseDetailClient({ release: initialRelease }: Props) {
