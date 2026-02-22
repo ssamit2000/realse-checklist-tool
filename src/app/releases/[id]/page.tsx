@@ -10,21 +10,30 @@ interface Release {
   date: string;
   additionalInfo: string;
   completedSteps: string[];
+  createdAt: string; // ✅ add createdAt if you want to display it
 }
 
 interface Props {
-  params: Promise<{ id: string }>; // <- params is a Promise in App Router
+  params: Promise<{ id: string }>; // params is a Promise in App Router
 }
 
 export default async function ReleaseDetailPage({ params }: Props) {
-  const { id: releaseId } = await params; // ✅ unwrap promise
+  const { id: releaseId } = await params; // unwrap promise
   if (!releaseId) return notFound();
 
-  const release: Release | null = await prisma.release.findUnique({
+  const dbRelease = await prisma.release.findUnique({
     where: { id: releaseId },
   });
 
-  if (!release) return notFound();
+  if (!dbRelease) return notFound();
+
+  // ✅ Convert Date objects to strings for TypeScript compatibility
+  const release: Release = {
+    ...dbRelease,
+    date: dbRelease.date.toISOString(),
+    createdAt: dbRelease.createdAt.toISOString(),
+    additionalInfo: dbRelease.additionalInfo ?? "",
+  };
 
   const completed = release.completedSteps?.length ?? 0;
   const status =
