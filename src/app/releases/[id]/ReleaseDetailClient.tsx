@@ -7,53 +7,54 @@ type Release = {
   id: string;
   name: string;
   date: string;
-  status: string;
   additionalInfo: string;
   completedSteps: string[];
 };
 
 type Props = {
   release: Release;
-  status: string;
 };
 
-export default function ReleaseDetailClient({ release: initialRelease, status }: Props) {
+export default function ReleaseDetailClient({ release: initialRelease }: Props) {
   const [release, setRelease] = useState(initialRelease);
+  const [draftSteps, setDraftSteps] = useState([...initialRelease.completedSteps]);
+  const [draftInfo, setDraftInfo] = useState(initialRelease.additionalInfo || "");
+  const [saving, setSaving] = useState(false);
 
-  async function toggleStep(step: string) {
-    const updatedSteps = release.completedSteps.includes(step)
-      ? release.completedSteps.filter((s) => s !== step)
-      : [...release.completedSteps, step];
+  const status =
+    draftSteps.length === 0
+      ? "planned"
+      : draftSteps.length === RELEASE_STEPS.length
+      ? "done"
+      : "ongoing";
 
-    const res = await fetch(`/api/releases/${release.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completedSteps: updatedSteps, additionalInfo: release.additionalInfo }),
-    });
-
-    if (!res.ok) {
-      console.error("Failed to update release", res.status);
-      return;
-    }
-
-    const updated = await res.json();
-    setRelease(updated);
+  function toggleStep(step: string) {
+    setDraftSteps((prev) =>
+      prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
+    );
   }
 
-  async function updateInfo(info: string) {
-    const res = await fetch(`/api/releases/${release.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completedSteps: release.completedSteps, additionalInfo: info }),
-    });
+  async function saveChanges() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/releases/${release.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completedSteps: draftSteps, additionalInfo: draftInfo }),
+      });
 
-    if (!res.ok) {
-      console.error("Failed to update release info", res.status);
-      return;
+      if (!res.ok) {
+        console.error("Failed to save release", res.status);
+        return;
+      }
+
+      const updated = await res.json();
+      setRelease(updated);
+      setDraftSteps(updated.completedSteps);
+      setDraftInfo(updated.additionalInfo || "");
+    } finally {
+      setSaving(false);
     }
-
-    const updated = await res.json();
-    setRelease(updated);
   }
 
   async function deleteRelease() {
@@ -68,6 +69,7 @@ export default function ReleaseDetailClient({ release: initialRelease, status }:
   return (
     <div style={{ padding: 20 }}>
       <h1>{release.name}</h1>
+      <p><strong>Created:</strong> {new Date(release.createdAt).toLocaleDateString()}</p>
       <p><strong>Due:</strong> {new Date(release.date).toLocaleDateString()}</p>
       <p><strong>Status:</strong> {status}</p>
 
@@ -78,7 +80,7 @@ export default function ReleaseDetailClient({ release: initialRelease, status }:
           <label>
             <input
               type="checkbox"
-              checked={release.completedSteps.includes(step)}
+              checked={draftSteps.includes(step)}
               onChange={() => toggleStep(step)}
             />
             {step}
@@ -89,13 +91,21 @@ export default function ReleaseDetailClient({ release: initialRelease, status }:
       <hr />
       <h3>Additional Info</h3>
       <textarea
-        value={release.additionalInfo || ""}
-        onChange={(e) => updateInfo(e.target.value)}
+        value={draftInfo}
+        onChange={(e) => setDraftInfo(e.target.value)}
         rows={4}
         style={{ width: "100%" }}
       />
 
       <hr />
+      <button
+        onClick={saveChanges}
+        disabled={saving}
+        style={{ background: "green", color: "white", padding: "8px 12px", border: "none", cursor: "pointer", marginRight: 10 }}
+      >
+        {saving ? "Saving..." : "Save"}
+      </button>
+
       <button
         onClick={deleteRelease}
         style={{ background: "red", color: "white", padding: "8px 12px", border: "none", cursor: "pointer" }}

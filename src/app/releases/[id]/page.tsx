@@ -4,11 +4,23 @@ import { notFound } from "next/navigation";
 import ReleaseDetailClient from "./ReleaseDetailClient";
 import { RELEASE_STEPS } from "@/lib/steps";
 
-export default async function ReleaseDetailPage({ params }: { params: { id: string } }) {
-  const releaseId = params.id;
-  if (!releaseId) return notFound(); // fallback if undefined
+interface Release {
+  id: string;
+  name: string;
+  date: string;
+  additionalInfo: string;
+  completedSteps: string[];
+}
 
-  const release = await prisma.release.findUnique({
+interface Props {
+  params: Promise<{ id: string }>; // <- params is a Promise in App Router
+}
+
+export default async function ReleaseDetailPage({ params }: Props) {
+  const { id: releaseId } = await params; // ✅ unwrap promise
+  if (!releaseId) return notFound();
+
+  const release: Release | null = await prisma.release.findUnique({
     where: { id: releaseId },
   });
 
@@ -22,6 +34,5 @@ export default async function ReleaseDetailPage({ params }: { params: { id: stri
       ? "done"
       : "ongoing";
 
-  // Pass data to Client Component
   return <ReleaseDetailClient release={release} status={status} />;
 }

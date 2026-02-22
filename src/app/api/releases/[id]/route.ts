@@ -1,38 +1,48 @@
-// src/app/releases/[id]/page.tsx
 import { prisma } from "@/lib/prisma";
-import { RELEASE_STEPS } from "@/lib/steps";
-import { notFound } from "next/navigation";
-import ReleaseDetailClient from "./ReleaseDetailClient";
+import { NextResponse } from "next/server";
 
-interface Release {
-  id: string;
-  name: string;
-  date: string;
-  additionalInfo: string;
-  completedSteps: string[];
+interface RouteContext {
+  params: Promise<{ id: string }>;
 }
 
-interface Props {
-  params: { id?: string }; // id optional
-}
+// GET /api/releases/:id
+export async function GET(_: Request, { params }: RouteContext) {
+  const { id } = await params;
 
-export default async function ReleaseDetailPage({ params }: Props) {
-  const releaseId = params?.id; // ✅ unwrap safely
-  if (!releaseId) return notFound(); // fallback
-
-  const release: Release | null = await prisma.release.findUnique({
-    where: { id: releaseId },
+  const release = await prisma.release.findUnique({
+    where: { id },
   });
 
-  if (!release) return notFound();
+  if (!release) {
+    return NextResponse.json({ error: "Release not found" }, { status: 404 });
+  }
 
-  const completed = release.completedSteps?.length ?? 0;
-  const status =
-    completed === 0
-      ? "planned"
-      : completed === RELEASE_STEPS.length
-      ? "done"
-      : "ongoing";
+  return NextResponse.json(release);
+}
 
-  return <ReleaseDetailClient release={release} status={status} /> ;
+// PATCH /api/releases/:id
+export async function PATCH(req: Request, { params }: RouteContext) {
+  const { id } = await params;
+  const body = await req.json();
+
+  const release = await prisma.release.update({
+    where: { id },
+    data: {
+      completedSteps: body.completedSteps,
+      additionalInfo: body.additionalInfo,
+    },
+  });
+
+  return NextResponse.json(release);
+}
+
+// DELETE /api/releases/:id
+export async function DELETE(_: Request, { params }: RouteContext) {
+  const { id } = await params;
+
+  await prisma.release.delete({
+    where: { id },
+  });
+
+  return new NextResponse(null, { status: 204 });
 }
