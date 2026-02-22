@@ -4,14 +4,13 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const releases = await prisma.release.findMany({
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(releases);
 }
 
 export async function POST(req: Request) {
   const body = await req.json();
-
   const initialSteps = RELEASE_STEPS.reduce((acc, step) => {
     acc[step] = false;
     return acc;
@@ -23,8 +22,8 @@ export async function POST(req: Request) {
       date: new Date(body.date),
       additionalInfo: body.additionalInfo,
       steps: initialSteps,
-      completedSteps: []
-    }
+      completedSteps: [],
+    },
   });
 
   return NextResponse.json(release);

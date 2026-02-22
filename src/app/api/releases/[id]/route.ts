@@ -1,58 +1,38 @@
+// src/app/releases/[id]/page.tsx
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
 import { RELEASE_STEPS } from "@/lib/steps";
+import { notFound } from "next/navigation";
+import ReleaseDetailClient from "./ReleaseDetailClient";
 
-// GET single release by ID
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
-
-  const release = await prisma.release.findUnique({
-    where: { id },
-  });
-
-  if (!release)
-    return NextResponse.json({ error: "Release not found" }, { status: 404 });
-
-  return NextResponse.json(release);
+interface Release {
+  id: string;
+  name: string;
+  date: string;
+  additionalInfo: string;
+  completedSteps: string[];
 }
 
-// PATCH to update steps / info
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
-  const body = await request.json();
-  const { completedSteps = [], additionalInfo = "" } = body;
+interface Props {
+  params: { id?: string }; // id optional
+}
 
+export default async function ReleaseDetailPage({ params }: Props) {
+  const releaseId = params?.id; // ✅ unwrap safely
+  if (!releaseId) return notFound(); // fallback
+
+  const release: Release | null = await prisma.release.findUnique({
+    where: { id: releaseId },
+  });
+
+  if (!release) return notFound();
+
+  const completed = release.completedSteps?.length ?? 0;
   const status =
-    completedSteps.length === 0
+    completed === 0
       ? "planned"
-      : completedSteps.length === RELEASE_STEPS.length
+      : completed === RELEASE_STEPS.length
       ? "done"
       : "ongoing";
 
-  const updated = await prisma.release.update({
-    where: { id },
-    data: { completedSteps, additionalInfo, status },
-  });
-
-  return NextResponse.json(updated);
-}
-
-// DELETE release
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
-
-  await prisma.release.delete({
-    where: { id },
-  });
-
-  return NextResponse.json({ success: true });
+  return <ReleaseDetailClient release={release} status={status} /> ;
 }
