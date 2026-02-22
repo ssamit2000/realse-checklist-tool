@@ -9,6 +9,7 @@ type Release = {
   date: string;
   additionalInfo: string;
   completedSteps: string[];
+  createdAt: string; // ✅ add this
 };
 
 type Props = {
