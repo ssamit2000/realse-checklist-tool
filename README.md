@@ -126,8 +126,3 @@ npm run test
 ```
 
 ---
-
-If you want, I can also **write a very short “Quick Deploy to Vercel” section** for this README, so someone can deploy it in 5 minutes without extra instructions.  
-
-Do you want me to do that?
-```
